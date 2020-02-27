@@ -35,6 +35,7 @@ public interface ManagerService {
 
     /**
      * 设置数据隔离文件夹
+     * @param nameSpace 数据隔离名称
      */
     void setNameSpace(String nameSpace);
 
@@ -44,24 +45,52 @@ public interface ManagerService {
     String getCurrentSpacePath() throws FileNotFoundException;
 
     /**
-     * 将string写入文件
-     * @param encoder 编码方式（utf-8等）
-     * @param data 写入的内容
-     * @param paths 保存文件的位置及文件名（例）("accountId","txt","ceshi.txt")
-     * @param listener 文件监听
-     *
-     */
-    void saveFile(String encoder, ArrayList<String> data, FileListener listener,String... paths);
+     * 从raw文件夹中读取文件
+     * @param rawFileId 文件id:R.raw.file名
+     * @param encodeType 文件的编码类型（例："UTF-8"等，如果编码不对会出现乱码）
+     * @param listener 读取监听
+     * */
+    void readRawFile(int rawFileId, String encodeType, ReadFileListener listener);
 
     /**
-     * 获取文件数据
-     *
-     * @param  encode 编码方式
+     * 读取应用asset文件内容
+     * @param fileName 文件名
+     * @param encodeType 文件编码类型
      * @param listener 读取监听
-     * @param paths 保存的位置（例）("accountId","txt","ceshi.txt") 既路径地址为：/accountId/txt/ceshi.txt
-     *
-     */
-    void readFileData(String encode, ReadFileListener listener,String... paths);
+     * */
+    void readAssetFile(String fileName, String encodeType, ReadFileListener listener);
+
+    /**
+     *在应用沙盒路径中写数据"data/data/<应用程序包名>/files/"
+     * @param data 写入的数据
+     * @param fileName 写入的文件名
+     * @param listener 文件监听
+     * 注意：如果向同一个文件里面写入文件会覆盖之前写入的内容，如非必须请务必重复写入同一个文件
+     * */
+    void writeFile(String fileName, String data, FileListener listener);
+
+    /**
+     * 读取沙盒路径中的文件数据"data/data/<应用程序包>/files/"
+     * @param fileName 文件名
+     * @param listener 读取监听
+     * */
+    void readFile(String fileName, ReadFileListener listener);
+
+    /**
+     * 在外存专属app文件目录中写文件,多次写入会覆盖之前的数据
+     * @param data 写入内容
+     * @param listener 文件监听
+     * @param paths 文件路径（“img”,"ceshi.txt"）表示“img/ceshi.txt”
+     * */
+    void writeExtfile(String data, FileListener listener,String... paths);
+
+    /**
+     * 读取外存专属目录文件
+     * @param encodeType 编码方式 默认UTF-8
+     * @param paths 读取路径（“img”,"ceshi.txt"）表示“img/ceshi.txt”
+     * @param listener 读取监听
+     * */
+    void readExtFile(String encodeType,ReadFileListener listener, String... paths);
 
     /**
      * 拷贝文件
@@ -75,9 +104,9 @@ public interface ManagerService {
     /**
      * 文件夹下的文件所有文件
      *
-     * @param dirPath 文件夹路径 （"img","ceshi.txt"）表示文件路径下的的“/img/ceshi.txt”
+     * @param dirPaths   文件夹名称例（"img","ceshi"）表示文件路径下的的“/img/ceshi"文件夹
      */
-    File[] getFileList(String dirPath);
+    File[] getFileList(String... dirPaths);
 
     /**
      * 删除文件夹或者文件
@@ -91,7 +120,7 @@ public interface ManagerService {
      *
      * @param dirPath 示例("cache","img")
      */
-    File createDirOrFile(String... dirPath) throws IOException;
+    boolean createDirOrFile(String... dirPath) throws IOException;
 
     /**
      * 清除缓存
@@ -109,7 +138,7 @@ public interface ManagerService {
     String getSaveRootPath();
 
     /**
-     * 获取临时文件保存路径
+     * 获取缓存保存路径
      */
     String getcaCehePath();
 

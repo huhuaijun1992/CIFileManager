@@ -1,0 +1,1 @@
+你好啊，陌生人，欢迎使用CIFile。这是是assets文件夹中的hello.txt文件

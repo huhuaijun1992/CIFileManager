@@ -6,5 +6,5 @@ package com.ci123.cifilemodule.listener;
  * @desc:
  */
 public interface FileListener {
-    void onSuccess(boolean isSuccess);
+    void onSuccess(boolean isSuccess,String msg);
 }

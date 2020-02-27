@@ -9,26 +9,22 @@ import com.ci123.cifilemodule.listener.FileListener;
 import com.ci123.cifilemodule.listener.ReadFileListener;
 import com.ci123.cifilemodule.service.ManagerService;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 
 /**
  * @author: 11304
  * @date: 2020/2/24
  * @desc:
  */
-class CIFileManager implements ManagerService {
+public class CIFileManager implements ManagerService {
 
     /**
      * 上下文
@@ -57,6 +53,7 @@ class CIFileManager implements ManagerService {
         this.context = context.getApplicationContext();
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             rootPath = context.getExternalFilesDir(null).getPath();
+
         } else {
             rootPath = context.getFilesDir().getPath();
         }
@@ -67,7 +64,6 @@ class CIFileManager implements ManagerService {
 
     @Override
     public void setNameSpace(String nameSpace) {
-
         File file = new File(rootPath);
         if (file.exists()) {
             File file1 = new File(rootPath, nameSpace);
@@ -95,66 +91,138 @@ class CIFileManager implements ManagerService {
     }
 
     @Override
-    public void saveFile(final String encoder, final ArrayList<String> data, final FileListener listener, final String... paths) {
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                String filePath = savePath;
-                for (String s : paths) {
-                    filePath = filePath + "/" + s;
-                }
-                File file = new File(filePath);
-                if (!file.exists()) {
-                    try {
-                        file.createNewFile();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        listener.onSuccess(false);
-                    }
-                }
-                try {
-                    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath), encoder));
-                    for (String str : data) {
-                        out.write(str);
-                        out.newLine();
-                    }
-                    out.flush();
-                    out.close();
-                    listener.onSuccess(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    listener.onSuccess(false);
-                }
-
+    public void readRawFile(final int rawFileId, final String encodeType, final ReadFileListener listener) {
+        String res = "";
+        try {
+            //得到资源中的Raw数据流
+            InputStream in = context.getResources().openRawResource(rawFileId);
+            //得到数据的大小
+            int length = in.available();
+            byte[] buffer = new byte[length];
+            //读取数据
+            in.read(buffer);
+            //依test.txt的编码类型选择合适的编码，如果不调整会乱码
+            if (encodeType != null && encodeType.length() > 0) {
+                res = EncodingUtils.getString(buffer, encodeType);
+            } else {
+                res = EncodingUtils.getString(buffer, "UTF-8");
             }
-        }.start();
+
+            //关闭
+            in.close();
+            listener.onSuccess(res);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            listener.onfail("读取失败");
+        }
 
     }
 
     @Override
-    public void readFileData(String encode, ReadFileListener listener, String... paths) {
-
-        String path = savePath;
-        for (String s : paths){
-            path = path+ "/" +s;
-        }
-        File file = new File(path);
-        if (!file.exists()||!file.isFile()){
-            listener.onfail("找不到该文件");
-        }
-        StringBuilder sb=new StringBuilder();
+    public void readAssetFile(String fileName, String encodeType, ReadFileListener listener) {
+        String res = "";
         try {
-            BufferedReader in =new BufferedReader(new InputStreamReader(new FileInputStream(path),encode));
-            String str=new String();
-            while ((str=in.readLine())!=null) {
-                sb.append(str);
-            }
+
+            //得到资源中的asset数据流
+            InputStream in = context.getResources().getAssets().open(fileName);
+
+            int length = in.available();
+            byte[] buffer = new byte[length];
+
+            in.read(buffer);
             in.close();
-            listener.onSuccess(sb.toString());
+            if (encodeType != null && encodeType.length() > 0) {
+                res = EncodingUtils.getString(buffer, encodeType);
+            } else {
+                res = EncodingUtils.getString(buffer, "UTF-8");
+            }
+            listener.onSuccess(res);
         } catch (Exception e) {
             e.printStackTrace();
-            listener.onfail("读取失败");
+            listener.onfail("读取文件失败");
+
+        }
+    }
+
+    @Override
+    public void writeFile(String fileName, String data, FileListener listener) {
+        try {
+            FileOutputStream fout = context.openFileOutput(fileName, context.MODE_PRIVATE);
+            byte[] bytes = data.getBytes();
+            fout.write(bytes);
+            fout.close();
+            listener.onSuccess(true, "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            listener.onSuccess(false, e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void readFile(String fileName, ReadFileListener listener) {
+        String res = "";
+        try {
+            FileInputStream fin = context.openFileInput(fileName);
+            int length = fin.available();
+            byte[] buffer = new byte[length];
+            fin.read(buffer);
+            res = EncodingUtils.getString(buffer, "UTF-8");
+            fin.close();
+            listener.onSuccess(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            listener.onfail(e.getMessage());
+        }
+    }
+
+    @Override
+    public void writeExtfile(String data, FileListener listener, String... paths) {
+        String path = savePath;
+        for (String s : paths) {
+            path = path + "/" + s;
+        }
+        try {
+            File file = new File(path);
+            if (!file.getParentFile().exists()) {
+                if (!file.getParentFile().mkdirs()) {
+                    listener.onSuccess(false, "文件夹不存在");
+                }
+            }
+            FileOutputStream fout = new FileOutputStream(path);
+            byte[] bytes = data.getBytes();
+            fout.write(bytes);
+            fout.close();
+            listener.onSuccess(true, "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            listener.onSuccess(false, e.getMessage());
+        }
+    }
+
+    @Override
+    public void readExtFile(String encodeType, ReadFileListener listener, String... paths) {
+        String path = savePath;
+        for (String s : paths) {
+            path = path + "/" + s;
+        }
+        String res = "";
+        try {
+            FileInputStream fin = new FileInputStream(path);
+            int length = fin.available();
+            byte[] buffer = new byte[length];
+            fin.read(buffer);
+            if (encodeType != null && encodeType.length() > 0) {
+                res = EncodingUtils.getString(buffer, encodeType);
+            } else {
+                res = EncodingUtils.getString(buffer, "UTF-8");
+            }
+            fin.close();
+            listener.onSuccess(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            listener.onfail(e.getMessage());
         }
     }
 
@@ -166,7 +234,7 @@ class CIFileManager implements ManagerService {
         }
         File dest = new File(destPath);
         if (!dest.getParentFile().exists()) {
-            dest.getParentFile().mkdir();
+            dest.getParentFile().mkdirs();
         }
         InputStream is = null;
         OutputStream os = null;
@@ -193,9 +261,13 @@ class CIFileManager implements ManagerService {
 
 
     @Override
-    public File[] getFileList(String dirPath) {
-        File file = new File(dirPath);
-        if (file.exists()) {
+    public File[] getFileList(String... dirPath) {
+        String path = savePath;
+        for (String s : dirPath) {
+            path = path + "/" + s;
+        }
+        File file = new File(path);
+        if (file.exists() && file.isDirectory()) {
             return file.listFiles();
         }
         return new File[0];
@@ -212,7 +284,7 @@ class CIFileManager implements ManagerService {
             if (dir.isDirectory()) {
                 String[] children = dir.list();
                 for (String child : children) {
-                    boolean success = deleteDirOrFile(new File(dir, child).getPath());
+                    boolean success = deleteFile(dir);
                     if (!success) {
                         return false;
                     }
@@ -223,11 +295,11 @@ class CIFileManager implements ManagerService {
         } else {
             throw new FileNotFoundException();
         }
-        return false;
+        return true;
     }
 
     @Override
-    public File createDirOrFile(String... dirPath) throws IOException {
+    public boolean createDirOrFile(String... dirPath) throws IOException {
         String path = savePath;
         for (String s : dirPath) {
             path = path + "/" + s;
@@ -236,15 +308,21 @@ class CIFileManager implements ManagerService {
         File dir = new File(path);
         if (dir.isDirectory()) {
             if (dir.exists()) {
-                return dir;
+                return true;
             } else {
-                dir.mkdir();
-                return dir;
+                dir.mkdirs();
+                return true;
             }
         } else {
             File file = new File(path);
-            file.createNewFile();
-            return file;
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            if (file.exists()){
+                return false;
+            }else {
+                return file.createNewFile();
+            }
         }
     }
 
@@ -262,7 +340,7 @@ class CIFileManager implements ManagerService {
                             boolean success = deleteFile(new File(cacheDir, child));
                             if (!success) {
                                 if (listener != null) {
-                                    listener.onSuccess(success);
+                                    listener.onSuccess(success, "");
                                 }
                             }
                         }
@@ -272,7 +350,7 @@ class CIFileManager implements ManagerService {
                 }
 
                 if (listener != null) {
-                    listener.onSuccess(true);
+                    listener.onSuccess(true, "");
 
                 }
             }
@@ -375,7 +453,7 @@ class CIFileManager implements ManagerService {
     /**
      * 获取文件大小
      *
-     * @param file 文件
+     * @param file 文件夹
      */
     public long getFolderSize(File file) {
         if (!file.exists()) {
@@ -434,5 +512,17 @@ class CIFileManager implements ManagerService {
         BigDecimal result4 = new BigDecimal(teraBytes);
         return result4.setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString()
                 + "TB";
+    }
+
+    static class EncodingUtils {
+        public static String getString(byte[] bytes, String encode) {
+            String str = "";
+            try {
+                str = new String(bytes, encode);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            return str;
+        }
     }
 }

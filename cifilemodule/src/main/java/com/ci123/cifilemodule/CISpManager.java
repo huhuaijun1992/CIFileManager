@@ -15,14 +15,14 @@ import java.util.Map;
  * @date: 2020/2/26
  * @desc:系统偏好设置管理
  */
-class CISpManager {
+public class CISpManager {
 
     /**
      * 偏好设置存储的名字
      */
     String fileName = "spFile";
     private Context context;
-    public SharedPreferences sp ;
+    private SharedPreferences sp ;
     private static final CISpManager ourInstance = new CISpManager();
 
     public static CISpManager getInstance() {
@@ -65,7 +65,7 @@ class CISpManager {
      * @param value
      * @return
      */
-    public <E>void put(Context context, @NonNull String key, @NonNull E value) {
+    private  <E>void put(Context context, @NonNull String key, @NonNull E value) {
         SharedPreferences.Editor editor = sp.edit();
         if (value instanceof String||value instanceof Integer||value instanceof Boolean||
                 value instanceof Float|| value instanceof Long||value instanceof Double) {
@@ -159,7 +159,7 @@ class CISpManager {
      */
     public  <T>T readObject(String key,  Class<T> clazz) {
         try {
-            return (T) get(key,clazz.newInstance());
+            return get(key,clazz.newInstance());
         } catch (Exception e) {
             e.printStackTrace();
         }

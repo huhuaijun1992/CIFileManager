@@ -15,7 +15,7 @@ import java.io.Serializable;
  * @date: 2020/2/26
  * @desc:缓存数据管理类
  */
-class CICachDataManager {
+public class CICachDataManager {
     ACache aCache;
     public static int TIME_DAY = ACache.TIME_DAY;
     public static int TIME_HOUR = ACache.TIME_HOUR;
@@ -182,5 +182,22 @@ class CICachDataManager {
     public Bitmap getAsBitmap(String key) {
         return aCache.getAsBitmap(key);
     }
+
+    /**
+     * 清除某个值
+     * @param key 键值
+     * */
+    public boolean remove(String key){
+        return aCache.remove(key);
+    }
+
+    /**
+     * 清除所有值
+     * */
+    public void clear(){
+        aCache.clear();
+    }
+
+
 
 }

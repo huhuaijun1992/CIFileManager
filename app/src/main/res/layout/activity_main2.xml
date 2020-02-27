@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Main2Activity">
+
+    <LinearLayout
+        android:id="@+id/lin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical"
+        android:padding="15dp">
+
+        <Button
+            android:id="@+id/save_string"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="保存key" />
+
+        <Button
+            android:id="@+id/delete_string"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="清除某个key的值" />
+        <Button
+            android:id="@+id/get_string"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="获取某个key的值" />
+        <Button
+            android:id="@+id/delete_all"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="清空所有的key" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@+id/lin" />
+
+
+</RelativeLayout>

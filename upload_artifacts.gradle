@@ -1,0 +1,62 @@
+static def getProjectMavenCoord(projectName) {
+    def aar_artifacts_config = [
+            'cifilemodule': 'com.ci123.library:CIFile:0.0.1',
+    ]
+
+    if (!aar_artifacts_config[projectName]) {
+        return null
+    }
+
+    def arr = aar_artifacts_config[projectName].split(':')
+    def groupId = arr[0]
+    def artifactId = arr[1]
+    def version = arr[2]
+
+    return ['groupId': groupId, 'artifactId': artifactId, 'version': version]
+
+}
+
+subprojects {
+    def rootProjectName = project.rootProject.name;
+    def mavenCoord = getProjectMavenCoord(project.name)
+    if (!mavenCoord) {
+        return
+    }
+    apply plugin: 'maven'
+    ext.MVN_RELEASE_REPOSITORY_URL = 'https://maven.oneitfarm.com/content/repositories/releases/'
+    ext.MVN_SNAPSHOT_REPOSITORY_URL = 'https://maven.oneitfarm.com/content/repositories/snapshots/'
+    ext.NEXUS_USERNAME = 'admin'
+    ext.NEXUS_PASSWORD = 'admin123457'
+    afterEvaluate { project ->
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    pom.groupId = mavenCoord.groupId
+                    pom.artifactId = mavenCoord.artifactId
+                    pom.version = mavenCoord.version
+                    repository(url: MVN_RELEASE_REPOSITORY_URL) {
+                        authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+                    }
+                    snapshotRepository(url: MVN_SNAPSHOT_REPOSITORY_URL) {
+                        authentication(userName: NEXUS_USERNAME, password: NEXUS_PASSWORD)
+                    }
+                    pom.whenConfigured {
+                        //convert 'project dependencies' to 'maven coordinate'
+                        it.dependencies.each {
+                            if (it.groupId == rootProjectName) {
+                                // warning: unsafe approach, dependency is a module dependency, because it's groupId is root project name
+                                def replacedMavenCoord = getProjectMavenCoord(it.artifactId)
+                                if (!replacedMavenCoord) {
+                                    throw new GradleException("find project dependency, but no maven coordinate found! ${it.groupId}:${it.artifactId}:${it.version}")
+                                }
+                                it.groupId = replacedMavenCoord.groupId
+                                it.artifactId = replacedMavenCoord.artifactId
+                                it.version = replacedMavenCoord.version
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
